@@ -16,7 +16,6 @@ type LogWriter interface {
 type LogStreamWriter struct {
 	syncWriter *syncWriter
 	opts       LogStreamWriterOption
-	cancel     context.CancelFunc
 }
 
 type LogStreamWriterOption struct {
@@ -30,6 +29,8 @@ type syncWriter struct {
 	buf       []byte
 	lock      sync.Locker
 	ch        chan string
+	cancel    context.CancelFunc
+	isClosed  bool
 }
 
 func NewLogStreamWriter(opts LogStreamWriterOption) *LogStreamWriter {
@@ -49,53 +50,65 @@ func (w *LogStreamWriter) Write(msg string) {
 }
 
 func (w *LogStreamWriter) Open() {
+	sw := w.syncWriter
+
 	ctx, cancel := context.WithCancel(context.Background())
-	w.cancel = cancel
+	sw.cancel = cancel
 
 	go func(ch <-chan string) {
-		sw := w.syncWriter
 		var wg sync.WaitGroup
 		for msg := range ch {
 			wg.Add(1)
-			go func() {
+			go func(msg string) {
 				defer wg.Done()
 				sw.lock.Lock()
 				defer sw.lock.Unlock()
 				sw.buf = append(sw.buf, []byte(fmt.Sprintln(msg))...)
-			}()
+			}(msg)
+			wg.Wait()
 		}
-	}(w.syncWriter.ch)
+	}(sw.ch)
 
 	go func() {
 		t := time.NewTicker(time.Duration(w.opts.SyncIntervalMills) * time.Millisecond)
 		defer t.Stop()
 		for {
-			sw := w.syncWriter
 			select {
 			case <-ctx.Done():
-				sw.lock.Lock()
-				defer sw.lock.Unlock()
 				for {
 					if len(sw.ch) == 0 && len(sw.buf) == 0 {
 						break
 					}
-					sw.bufWriter.Write(sw.buf)
-					sw.buf = []byte{}
+					syncFlushBuf(sw)
 				}
+				sw.isClosed = true
 				return
 			case <-t.C:
-				sw.lock.Lock()
-				defer sw.lock.Unlock()
-				sw.bufWriter.Write(sw.buf)
-				sw.buf = []byte{}
+				syncFlushBuf(sw)
 			}
 		}
 	}()
 }
 
-func (w *LogStreamWriter) Close() {
-	close(w.syncWriter.ch)
-	w.cancel()
+func (w *LogStreamWriter) Close(timeout time.Duration) {
+	sw := w.syncWriter
+
+	close(sw.ch)
+	sw.cancel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	for {
+		select {
+		case <-ctx.Done():
+			syncFlushBuf(sw)
+			return
+		case <-time.After(100 * time.Millisecond):
+			if sw.isClosed {
+				cancel()
+			}
+		}
+	}
 }
 
 func newSyncWriter(file *os.File, queueSize int16) *syncWriter {
@@ -109,4 +122,12 @@ func newSyncWriter(file *os.File, queueSize int16) *syncWriter {
 
 func (w *syncWriter) Write(msg string) {
 	w.ch <- msg
+}
+
+func syncFlushBuf(sw *syncWriter) {
+	sw.lock.Lock()
+	defer sw.lock.Unlock()
+	sw.bufWriter.Write(sw.buf)
+	sw.bufWriter.Flush()
+	sw.buf = []byte{}
 }

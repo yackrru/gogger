@@ -23,7 +23,10 @@ const (
 )
 
 type Logger interface {
-	writers() []LogWriter
+	Info(args ...interface{})
+	Debug(args ...interface{})
+	Warn(args ...interface{})
+	Error(args ...interface{})
 }
 
 type Log struct {

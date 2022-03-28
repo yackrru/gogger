@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	DefaultLogSimpleFormatterTmpl = "%timestamp%  %level% --- [%pkg%] %args%"
+)
+
 type LogFormatter interface {
 	Format(timestamp, level, pkg string, args ...interface{}) string
 }
@@ -17,7 +21,9 @@ func NewLogSimpleFormatter(tmpl string) *LogSimpleFormatter {
 	f := new(LogSimpleFormatter)
 
 	if tmpl == "" {
-		f.tmpl = "%timestamp%  %level% --- [%pkg%] %args%"
+		f.tmpl = DefaultLogSimpleFormatterTmpl
+	} else {
+		f.tmpl = tmpl
 	}
 
 	return f
