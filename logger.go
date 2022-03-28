@@ -1,6 +1,7 @@
 package gogger
 
 import (
+	"github.com/uniplaces/carbon"
 	"runtime"
 	"strconv"
 	"strings"
@@ -59,11 +60,11 @@ func NewLog(conf *LogConfig) *Log {
 	log.formatter = conf.Formatter
 
 	log.clock = clock{
-		format: conf.TimeFormat,
-		locale: time.Local,
+		Format: conf.TimeFormat,
+		Locale: time.Local,
 	}
-	if log.clock.format == "" {
-		log.clock.format = DefaultTimeFormat
+	if log.clock.Format == "" {
+		log.clock.Format = DefaultTimeFormat
 	}
 
 	if conf.LogMinLevel == LevelDefault {
@@ -139,7 +140,7 @@ func log(logger Log, level LogLevel, args ...interface{}) {
 	if _, file, line, ok := runtime.Caller(3); ok {
 		pkg = formatFileName(file) + ":" + strconv.Itoa(line)
 	}
-	msg := logger.formatter.Format(logger.clock.now(),
+	msg := logger.formatter.Format(logger.clock.Now(),
 		getLogLevelStr(level), pkg, args...)
 
 	// Note that do not check if writer is nil or not.
@@ -170,10 +171,10 @@ func formatFileName(file string) string {
 }
 
 type clock struct {
-	format string
-	locale *time.Location
+	Format string
+	Locale *time.Location
 }
 
-func (c clock) now() string {
-	return time.Now().In(c.locale).Format(c.format)
+func (c clock) Now() string {
+	return carbon.Now().In(c.Locale).Format(c.Format)
 }

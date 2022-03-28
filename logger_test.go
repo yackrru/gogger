@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/uniplaces/carbon"
 	"github.com/yackrru/gogger"
 	"os"
 	"runtime"
@@ -176,4 +177,43 @@ func TestFormatFileName(t *testing.T) {
 	if _, file, _, ok := runtime.Caller(0); ok {
 		assert.Equal(t, "gogger/logger_test.go", gogger.ExportFormatFileName(file))
 	}
+}
+
+func TestClockNow(t *testing.T) {
+	// 2017-03-08T01:24:34+00:00
+	timestamp := int64(1488936274)
+	timeToFreeze, err := carbon.CreateFromTimestampUTC(timestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	carbon.Freeze(timeToFreeze.Time)
+	defer carbon.UnFreeze()
+
+	t.Run("UTC default format", func(t *testing.T) {
+		clockUTC := gogger.ExportClock{
+			Format: gogger.DefaultTimeFormat,
+			Locale: time.UTC,
+		}
+		assert.Equal(t, "2017-03-08 01:24:34.000", clockUTC.Now())
+	})
+
+	t.Run("UTC custom format", func(t *testing.T) {
+		clockUTC := gogger.ExportClock{
+			Format: "2006/01/02 15:04:05",
+			Locale: time.UTC,
+		}
+		assert.Equal(t, "2017/03/08 01:24:34", clockUTC.Now())
+	})
+
+	t.Run("JST default format", func(t *testing.T) {
+		jst, err := time.LoadLocation("Asia/Tokyo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		clockJST := gogger.ExportClock{
+			Format: gogger.DefaultTimeFormat,
+			Locale: jst,
+		}
+		assert.Equal(t, "2017-03-08 10:24:34.000", clockJST.Now())
+	})
 }
