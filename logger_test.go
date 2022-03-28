@@ -2,9 +2,11 @@ package gogger_test
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/yackrru/gogger"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -54,6 +56,124 @@ func TestIntegration(t *testing.T) {
 	assert.Equal(t, "This is the test 1.\n", pkgAndLog[1])
 }
 
-func TestOutputLevel(t *testing.T) {
+const (
+	debugLogStr = "debug log"
+	infoLogStr  = "info log"
+	warnLogStr  = "warn log"
+	errorLogStr = "error log"
+)
 
+// TestLogLevelWriter is the writer that record specific log string.
+type TestLogLevelWriter struct {
+	hasDebug bool
+	hasInfo  bool
+	hasWarn  bool
+	hasError bool
+}
+
+func (w *TestLogLevelWriter) Write(msg string) {
+	switch msg {
+	case debugLogStr:
+		w.hasDebug = true
+	case infoLogStr:
+		w.hasInfo = true
+	case warnLogStr:
+		w.hasWarn = true
+	case errorLogStr:
+		w.hasError = true
+	}
+}
+
+// TestNonFormatter is the formatter that return raw args string.
+type TestNonFormatter struct{}
+
+func (t TestNonFormatter) Format(timestamp, level, pkg string, args ...interface{}) string {
+	return fmt.Sprint(args...)
+}
+
+func TestLogLevel(t *testing.T) {
+	t.Run("Debug", func(t *testing.T) {
+		writer := new(TestLogLevelWriter)
+		logger := createLogLevelLogger(gogger.LevelDebug, writer)
+		outputLog(logger)
+
+		assert.True(t, writer.hasDebug)
+		assert.True(t, writer.hasInfo)
+		assert.True(t, writer.hasWarn)
+		assert.True(t, writer.hasError)
+	})
+
+	t.Run("Info", func(t *testing.T) {
+		writer := new(TestLogLevelWriter)
+		logger := createLogLevelLogger(gogger.LevelInfo, writer)
+		outputLog(logger)
+
+		assert.False(t, writer.hasDebug)
+		assert.True(t, writer.hasInfo)
+		assert.True(t, writer.hasWarn)
+		assert.True(t, writer.hasError)
+	})
+
+	t.Run("Warn", func(t *testing.T) {
+		writer := new(TestLogLevelWriter)
+		logger := createLogLevelLogger(gogger.LevelWarn, writer)
+		outputLog(logger)
+
+		assert.False(t, writer.hasDebug)
+		assert.False(t, writer.hasInfo)
+		assert.True(t, writer.hasWarn)
+		assert.True(t, writer.hasError)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		writer := new(TestLogLevelWriter)
+		logger := createLogLevelLogger(gogger.LevelError, writer)
+		outputLog(logger)
+
+		assert.False(t, writer.hasDebug)
+		assert.False(t, writer.hasInfo)
+		assert.False(t, writer.hasWarn)
+		assert.True(t, writer.hasError)
+	})
+
+	t.Run("Off", func(t *testing.T) {
+		writer := new(TestLogLevelWriter)
+		logger := createLogLevelLogger(gogger.LevelOff, writer)
+		outputLog(logger)
+
+		assert.False(t, writer.hasDebug)
+		assert.False(t, writer.hasInfo)
+		assert.False(t, writer.hasWarn)
+		assert.False(t, writer.hasError)
+	})
+}
+
+func createLogLevelLogger(level gogger.LogLevel, writer gogger.LogWriter) *gogger.Log {
+	conf := &gogger.LogConfig{
+		Writers:     []gogger.LogWriter{writer},
+		Formatter:   new(TestNonFormatter),
+		TimeFormat:  gogger.DefaultTimeFormat,
+		LogMinLevel: level,
+	}
+	return gogger.NewLog(conf)
+}
+
+func outputLog(logger gogger.Logger) {
+	logger.Debug(debugLogStr)
+	logger.Info(infoLogStr)
+	logger.Warn(warnLogStr)
+	logger.Error(errorLogStr)
+}
+
+func TestGetLogLevelStr(t *testing.T) {
+	assert.Equal(t, "DEBUG", gogger.ExportGetLogLevelStr(gogger.LevelDebug))
+	assert.Equal(t, "INFO", gogger.ExportGetLogLevelStr(gogger.LevelInfo))
+	assert.Equal(t, "WARN", gogger.ExportGetLogLevelStr(gogger.LevelWarn))
+	assert.Equal(t, "ERROR", gogger.ExportGetLogLevelStr(gogger.LevelError))
+}
+
+func TestFormatFileName(t *testing.T) {
+	if _, file, _, ok := runtime.Caller(0); ok {
+		assert.Equal(t, "gogger/logger_test.go", gogger.ExportFormatFileName(file))
+	}
 }
