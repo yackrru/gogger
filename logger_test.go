@@ -1,8 +1,9 @@
-package gogger
+package gogger_test
 
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"github.com/yackrru/gogger"
 	"os"
 	"strings"
 	"testing"
@@ -15,20 +16,20 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := LogStreamWriterOption{
+	opts := gogger.LogStreamWriterOption{
 		Output:            w,
 		SyncIntervalMills: 100,
 	}
-	writer := NewLogStreamWriter(opts)
+	writer := gogger.NewLogStreamWriter(opts)
 	writer.Open()
 
-	conf := &LogConfig{
-		Writers:     []LogWriter{writer},
-		Formatter:   NewLogSimpleFormatter(DefaultLogSimpleFormatterTmpl),
-		TimeFormat:  DefaultTimeFormat,
-		LogMinLevel: LevelInfo,
+	conf := &gogger.LogConfig{
+		Writers:     []gogger.LogWriter{writer},
+		Formatter:   gogger.NewLogSimpleFormatter(gogger.DefaultLogSimpleFormatterTmpl),
+		TimeFormat:  gogger.DefaultTimeFormat,
+		LogMinLevel: gogger.LevelInfo,
 	}
-	logger := NewLog(conf)
+	logger := gogger.NewLog(conf)
 
 	logger.Info("This is the test 1.")
 	writer.Close(3 * time.Second)
@@ -43,7 +44,7 @@ func TestIntegration(t *testing.T) {
 
 	assert.True(t, strings.HasSuffix(resultParts[0], "INFO"))
 	timeStr := strings.TrimRight(resultParts[0], "  INFO")
-	if _, err := time.Parse(DefaultTimeFormat, timeStr); err != nil {
+	if _, err := time.Parse(gogger.DefaultTimeFormat, timeStr); err != nil {
 		t.Error("Got unexpected err: ", err)
 	}
 
@@ -51,4 +52,8 @@ func TestIntegration(t *testing.T) {
 	pkg := strings.TrimLeft(pkgAndLog[0], "[")
 	assert.True(t, strings.HasPrefix(pkg, "gogger/logger_test.go:"))
 	assert.Equal(t, "This is the test 1.\n", pkgAndLog[1])
+}
+
+func TestOutputLevel(t *testing.T) {
+
 }
