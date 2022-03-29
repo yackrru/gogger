@@ -11,6 +11,7 @@ import (
 type LogLevel uint8
 
 const (
+	// LevelDefault equals the LevelInfo.
 	LevelDefault LogLevel = iota
 	LevelDebug
 	LevelInfo
@@ -23,6 +24,11 @@ const (
 	DefaultTimeFormat = "2006-01-02 15:04:05.000"
 )
 
+var (
+	_ Logger = new(Log)
+)
+
+// Logger is the interface that wraps the methods for logging.
 type Logger interface {
 	Info(args ...interface{})
 	Debug(args ...interface{})
@@ -30,6 +36,9 @@ type Logger interface {
 	Error(args ...interface{})
 }
 
+// Log is the top-level logger instance.
+// However, it is only an abstracted entrypoint,
+// and need to set LogWriter for output and LogFormatter for formatting.
 type Log struct {
 	writers   []LogWriter
 	formatter LogFormatter
@@ -37,10 +46,21 @@ type Log struct {
 	adapter   *logFnAdapter
 }
 
+// LogConfig is the configurations of Log.
+// There is no way to configure settings directly in the Log,
+// and can only change settings through this config.
 type LogConfig struct {
-	Writers     []LogWriter
-	Formatter   LogFormatter
-	TimeFormat  string
+
+	// Multiple LogWriters can be configured to output logs to multiple destinations.
+	Writers []LogWriter
+
+	// Only one LogFormatter can be set per Log instance.
+	Formatter LogFormatter
+
+	// The default value for TimeFormat is DefaultTimeFormat.
+	TimeFormat string
+
+	// The default value for LogMinLevel is LevelInfo.
 	LogMinLevel LogLevel
 }
 
@@ -93,6 +113,7 @@ func NewLog(conf *LogConfig) *Log {
 	return log
 }
 
+// AddWriters adds LogWriter to Log.
 func (l *Log) AddWriters(ws ...LogWriter) {
 	for _, w := range ws {
 		l.writers = append(l.writers, w)
@@ -166,8 +187,8 @@ func getLogLevelStr(level LogLevel) (str string) {
 }
 
 func formatFileName(file string) string {
-	compnents := strings.Split(file, "/")
-	return strings.Join(compnents[len(compnents)-2:], "/")
+	components := strings.Split(file, "/")
+	return strings.Join(components[len(components)-2:], "/")
 }
 
 type clock struct {

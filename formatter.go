@@ -9,10 +9,16 @@ const (
 	DefaultLogSimpleFormatterTmpl = "%timestamp%  %level% --- [%pkg%] %args%"
 )
 
+// LogFormatter is the interface that wraps the standard method of Format.
 type LogFormatter interface {
 	Format(timestamp, level, pkg string, args ...interface{}) string
 }
 
+// LogSimpleFormatter implements LogFormatter.
+// It outputs simple flat string has params that are timestamp, level, pkg and args.
+// Set each parameter in tmpl freely arranged by enclosing each parameter in % like %timestamp%.
+// The default value of tmpl is DefaultLogSimpleFormatterTmpl.
+// The args param is identical to the args passed in the Logger interface method.
 type LogSimpleFormatter struct {
 	tmpl string
 }

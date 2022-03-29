@@ -9,19 +9,35 @@ import (
 	"time"
 )
 
+// LogWriter is the interface that wraps standard method of Write.
 type LogWriter interface {
 	Write(msg string)
 }
 
+// LogStreamWriter implements LogWriter.
+// It is an asynchronous log writer with an internal FIFO queue
+// (channel to be exact) of log strings and a log output goroutine.
 type LogStreamWriter struct {
 	syncWriter *syncWriter
 	opts       LogStreamWriterOption
 }
 
+// LogStreamWriterOption is the options of LogStreamWriter.
+// There is no way to configure options directly in the LogStreamWriter,
+// and can only change settings through this option.
 type LogStreamWriterOption struct {
-	Output            *os.File
+
+	// Output is the log output destination.
+	// Default is os.Stderr.
+	Output *os.File
+
+	// SyncIntervalMills is the log output interval.
+	// Default is 100.
 	SyncIntervalMills int64
-	SyncQueueSize     int16
+
+	// SyncQueueSize is the log string queue size.
+	// Default is 1000.
+	SyncQueueSize int16
 }
 
 type syncWriter struct {
@@ -33,7 +49,19 @@ type syncWriter struct {
 	isClosed  bool
 }
 
+// NewLogStreamWriter creates LogStreamWriter but does not start logging.
+// Execute LogStreamWriter.Open is required to start logging.
 func NewLogStreamWriter(opts LogStreamWriterOption) *LogStreamWriter {
+	// Set default output.
+	if opts.Output == nil {
+		opts.Output = os.Stderr
+	}
+
+	// Set default sync interval mills.
+	if opts.SyncIntervalMills == 0 {
+		opts.SyncIntervalMills = 100
+	}
+
 	// Set default queue size
 	if opts.SyncQueueSize == 0 {
 		opts.SyncQueueSize = 1000
@@ -49,6 +77,7 @@ func (w *LogStreamWriter) Write(msg string) {
 	w.syncWriter.Write(msg)
 }
 
+// Open starts synchronization of the output goroutine.
 func (w *LogStreamWriter) Open() {
 	sw := w.syncWriter
 
@@ -90,6 +119,9 @@ func (w *LogStreamWriter) Open() {
 	}()
 }
 
+// Close terminates acceptance of logs and outputs logs accumulated in the queue.
+// However, since asynchronous goroutine is output while synchronizing,
+// a timeout is set, and synchronization is terminated when the timeout is exceeded.
 func (w *LogStreamWriter) Close(timeout time.Duration) {
 	sw := w.syncWriter
 
