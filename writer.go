@@ -36,8 +36,8 @@ type LogStreamWriterOption struct {
 	SyncIntervalMills int64
 
 	// SyncQueueSize is the log string queue size.
-	// Default is 1000.
-	SyncQueueSize int16
+	// Default is 10000.
+	SyncQueueSize uint16
 }
 
 type syncWriter struct {
@@ -64,7 +64,7 @@ func NewLogStreamWriter(opts LogStreamWriterOption) *LogStreamWriter {
 
 	// Set default queue size
 	if opts.SyncQueueSize == 0 {
-		opts.SyncQueueSize = 1000
+		opts.SyncQueueSize = 10000
 	}
 
 	return &LogStreamWriter{
@@ -133,7 +133,8 @@ func (w *LogStreamWriter) Close(timeout time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
-			syncFlushBuf(sw)
+			sw.bufWriter.Write(sw.buf)
+			sw.bufWriter.Flush()
 			return
 		case <-time.After(100 * time.Millisecond):
 			if sw.isClosed {
@@ -143,7 +144,7 @@ func (w *LogStreamWriter) Close(timeout time.Duration) {
 	}
 }
 
-func newSyncWriter(file *os.File, queueSize int16) *syncWriter {
+func newSyncWriter(file *os.File, queueSize uint16) *syncWriter {
 	bufWriter := bufio.NewWriter(file)
 	return &syncWriter{
 		bufWriter: bufWriter,
