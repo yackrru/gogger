@@ -1,6 +1,7 @@
 package gogger
 
 import (
+	"fmt"
 	"github.com/uniplaces/carbon"
 	"runtime"
 	"strconv"
@@ -34,6 +35,11 @@ type Logger interface {
 	Debug(args ...interface{})
 	Warn(args ...interface{})
 	Error(args ...interface{})
+
+	Infof(format string, args ...interface{})
+	Debugf(format string, args ...interface{})
+	Warnf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
 }
 
 // Log is the top-level logger instance.
@@ -134,6 +140,22 @@ func (l *Log) Warn(args ...interface{}) {
 
 func (l *Log) Error(args ...interface{}) {
 	l.adapter.error(*l, args...)
+}
+
+func (l *Log) Infof(format string, args ...interface{}) {
+	l.adapter.info(*l, fmt.Sprintf(format, args...))
+}
+
+func (l *Log) Debugf(format string, args ...interface{}) {
+	l.adapter.debug(*l, fmt.Sprintf(format, args...))
+}
+
+func (l *Log) Warnf(format string, args ...interface{}) {
+	l.adapter.warn(*l, fmt.Sprintf(format, args...))
+}
+
+func (l *Log) Errorf(format string, args ...interface{}) {
+	l.adapter.error(*l, fmt.Sprintf(format, args...))
 }
 
 func infoFn(logger Log, args ...interface{}) {
