@@ -1,6 +1,8 @@
 # gogger
 
 [![CI](https://github.com/yackrru/gogger/actions/workflows/ci.yml/badge.svg)](https://github.com/yackrru/gogger/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/yackrru/gogger/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/yackrru/gogger/actions/workflows/codeql-analysis.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/yackrru/gogger.svg)](https://pkg.go.dev/github.com/yackrru/gogger)
 
 A Go library for logging.
 
