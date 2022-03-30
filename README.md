@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/yackrru/gogger/actions/workflows/ci.yml/badge.svg)](https://github.com/yackrru/gogger/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/yackrru/gogger/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/yackrru/gogger/actions/workflows/codeql-analysis.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yackrru/gogger)](https://goreportcard.com/report/github.com/yackrru/gogger)
 [![Go Reference](https://pkg.go.dev/badge/github.com/yackrru/gogger.svg)](https://pkg.go.dev/github.com/yackrru/gogger)
 
 A Go library for logging.
