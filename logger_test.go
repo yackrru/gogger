@@ -3,14 +3,15 @@ package gogger_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/uniplaces/carbon"
-	"github.com/yackrru/gogger"
 	"os"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/uniplaces/carbon"
+	"github.com/yackrru/gogger"
 )
 
 func TestIntegration(t *testing.T) {
@@ -35,7 +36,7 @@ func TestIntegration(t *testing.T) {
 	logger := gogger.NewLog(conf)
 
 	logger.Info("This is the test 1.")
-	writer.Close(3 * time.Second)
+	writer.Close()
 	w.Close()
 
 	var buf bytes.Buffer
@@ -79,7 +80,7 @@ func TestIntegrationFormat(t *testing.T) {
 	logger := gogger.NewLog(conf)
 
 	logger.Infof("This is the test %d.", 1)
-	writer.Close(3 * time.Second)
+	writer.Close()
 	w.Close()
 
 	var buf bytes.Buffer

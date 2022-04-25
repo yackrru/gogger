@@ -2,12 +2,13 @@ package gogger_test
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"github.com/yackrru/gogger"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/yackrru/gogger"
 )
 
 func TestLogStreamWriter(t *testing.T) {
@@ -17,8 +18,7 @@ func TestLogStreamWriter(t *testing.T) {
 	}
 
 	writer := gogger.NewLogStreamWriter(gogger.LogStreamWriterOption{
-		Output:        w,
-		SyncQueueSize: 1000,
+		Output: w,
 	})
 	writer.Open()
 
@@ -29,7 +29,7 @@ func TestLogStreamWriter(t *testing.T) {
 		want += is + "\n"
 	}
 	time.Sleep(1 * time.Second)
-	writer.Close(1 * time.Second)
+	writer.Close()
 	w.Close()
 
 	var buf bytes.Buffer
