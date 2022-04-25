@@ -38,7 +38,7 @@ func main() {
 		Output: os.Stderr,
 	})
 	writer.Open()
-	defer writer.Close(2 * time.Minute)
+	defer writer.Close()
 	
 	logger := gogger.NewLog(&gogger.LogConfig{
 		Writers: []gogger.LogWriter{writer},
@@ -63,14 +63,12 @@ It is a centralized setting for `Log`.
 ## Writer
 
 ### LogStreamWriter
-It is an asynchronous log writer with an internal FIFO queue (channel to be exact) of log strings and a log output goroutine.
-Performance is adjusted the capacity of the channel as a FIFO queue and the interval between log outputs.
+It is an asynchronous log writer with an internal buffer of log strings and a log output goroutine.
 
 ```go
 gogger.NewLogStreamWriter(gogger.LogStreamWriterOption{
 	Output: os.Stderr,
 	SyncIntervalMills: 100,
-	SyncQueueSize: 50000,
 })
 ```
 
@@ -78,7 +76,6 @@ gogger.NewLogStreamWriter(gogger.LogStreamWriterOption{
 |:------:|:---------:|:----------------------------------------------------------|
 | Output | os.Stderr | Specify the `*os.File` to which the logs will be output.  |
 |SyncIntervalMills|    100    | The log output interval. (milliseconds)                   |
-|SyncQueueSize|   10000   | The capacity of the channel as a FIFO queue. (0 - 65,535) |
 
 ## Formatter
 
