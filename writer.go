@@ -22,7 +22,7 @@ type LogStreamWriter struct {
 	lock       sync.Locker
 	opts       LogStreamWriterOption
 	shutdownCh chan struct{}
-	done       chan struct{}
+	doneCh     chan struct{}
 }
 
 // LogStreamWriterOption is the options of LogStreamWriter.
@@ -68,7 +68,7 @@ func (w *LogStreamWriter) Write(msg string) {
 
 // Open starts synchronization of the output goroutine.
 func (w *LogStreamWriter) Open() {
-	w.done = make(chan struct{})
+	w.doneCh = make(chan struct{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -85,7 +85,7 @@ func (w *LogStreamWriter) Open() {
 			select {
 			case <-ctx.Done():
 				w.syncFlushBuf()
-				close(w.done)
+				close(w.doneCh)
 				return
 			case <-t.C:
 				w.syncFlushBuf()
@@ -97,7 +97,7 @@ func (w *LogStreamWriter) Open() {
 // Close terminates acceptance of logs and outputs logs accumulated in the buffer.
 func (w *LogStreamWriter) Close() {
 	close(w.shutdownCh)
-	<-w.done
+	<-w.doneCh
 }
 
 func (w *LogStreamWriter) syncFlushBuf() {
